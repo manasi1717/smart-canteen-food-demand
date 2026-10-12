@@ -1,0 +1,1634 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Smart Canteen | AI Food Demand Prediction</title>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f4f8f6;
+            color: #17231f;
+            line-height: 1.6;
+        }
+
+        /* ================= HEADER ================= */
+
+        header {
+            background: linear-gradient(135deg, #0d6b57, #19866d);
+            color: white;
+            padding: 55px 20px 70px;
+            text-align: center;
+        }
+
+        .badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.16);
+            border: 1px solid rgba(255,255,255,0.25);
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 18px;
+        }
+
+        header h1 {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 19px;
+            margin-bottom: 8px;
+        }
+
+        .hero-small {
+            font-size: 14px;
+            opacity: 0.85;
+        }
+
+        /* ================= MAIN ================= */
+
+        .container {
+            width: 92%;
+            max-width: 1150px;
+            margin: -35px auto 50px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 22px;
+            padding: 38px;
+            box-shadow: 0 12px 40px rgba(20, 60, 45, 0.10);
+            margin-bottom: 28px;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 8px;
+            color: #17372e;
+            font-size: 29px;
+        }
+
+        .section-subtitle {
+            text-align: center;
+            color: #6b7772;
+            margin-bottom: 32px;
+            font-size: 15px;
+        }
+
+        /* ================= FORM ================= */
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 22px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #243b34;
+            font-size: 14px;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 14px 15px;
+            border: 1px solid #d7e0dc;
+            border-radius: 11px;
+            background: #fbfcfc;
+            font-size: 15px;
+            color: #24332e;
+            outline: none;
+            transition: 0.2s ease;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: #19866d;
+            box-shadow: 0 0 0 3px rgba(25,134,109,0.12);
+            background: white;
+        }
+
+        /* ================= BUTTON ================= */
+
+        .button-area {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .predict-btn {
+            border: none;
+            background: linear-gradient(135deg, #0d6b57, #19866d);
+            color: white;
+            padding: 15px 32px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.25s ease;
+            box-shadow: 0 8px 20px rgba(13,107,87,0.20);
+        }
+
+        .predict-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px rgba(13,107,87,0.28);
+        }
+
+        /* ================= RESULT ================= */
+
+        .result-card {
+            background: linear-gradient(180deg, #ffffff, #f9fcfb);
+            border: 1px solid #e1ebe7;
+        }
+
+        .result-heading {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .result-heading h2 {
+            font-size: 30px;
+            color: #17372e;
+            margin-bottom: 5px;
+        }
+
+        .result-heading p {
+            color: #73807b;
+            font-size: 14px;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px;
+        }
+
+        .result-box {
+            background: #f4f8f6;
+            border-radius: 18px;
+            padding: 25px 15px;
+            text-align: center;
+            border: 1px solid #e1ebe7;
+        }
+
+        .result-icon {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .result-value {
+            font-size: 34px;
+            font-weight: 800;
+            color: #0d6b57;
+            margin-bottom: 4px;
+        }
+
+        .result-label {
+            font-size: 14px;
+            color: #65736d;
+            font-weight: bold;
+        }
+
+        /* ================= RECOMMENDATION ================= */
+
+        .recommendation {
+            margin-top: 25px;
+            padding: 20px 22px;
+            border-radius: 16px;
+            background: #edf8f4;
+            border-left: 5px solid #19866d;
+        }
+
+        .recommendation h3 {
+            color: #0d6b57;
+            margin-bottom: 5px;
+            font-size: 18px;
+        }
+
+        .recommendation p {
+            color: #455750;
+            font-size: 14px;
+        }
+
+        /* ================= CURRENT PREDICTION GRAPH ================= */
+
+        .prediction-chart-box {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #f8fbfa;
+            border: 1px solid #e1ebe7;
+            border-radius: 18px;
+            padding: 25px;
+        }
+
+        .prediction-chart-container {
+            height: 360px;
+            position: relative;
+        }
+
+        /* ================= ANALYTICS ================= */
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-top: 25px;
+        }
+
+        .chart-card {
+            background: #f8fbfa;
+            border: 1px solid #e1ebe7;
+            border-radius: 18px;
+            padding: 20px;
+        }
+
+        .chart-card h3 {
+            text-align: center;
+            color: #17372e;
+            margin-bottom: 18px;
+            font-size: 17px;
+        }
+
+        .chart-container {
+            height: 330px;
+            position: relative;
+        }
+
+        .wide-chart {
+            grid-column: 1 / -1;
+        }
+
+        /* ================= HOW IT WORKS ================= */
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px;
+            margin-top: 25px;
+        }
+
+        .step {
+            text-align: center;
+            padding: 25px 15px;
+            border-radius: 17px;
+            background: #f7faf9;
+            border: 1px solid #e3ebe7;
+        }
+
+        .step-icon {
+            width: 58px;
+            height: 58px;
+            margin: 0 auto 13px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #e6f4ef;
+            font-size: 27px;
+        }
+
+        .step h3 {
+            font-size: 16px;
+            margin-bottom: 5px;
+            color: #243b34;
+        }
+
+        .step p {
+            font-size: 13px;
+            color: #78827e;
+        }
+
+        /* ================= STATISTICS ================= */
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px;
+            margin-top: 25px;
+        }
+
+        .stat {
+            text-align: center;
+            background: #ffffff;
+            border: 1px solid #e2ebe7;
+            border-radius: 18px;
+            padding: 24px 12px;
+        }
+
+        .stat-number {
+            font-size: 28px;
+            font-weight: 800;
+            color: #0d6b57;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #6f7b76;
+            margin-top: 5px;
+        }
+
+        /* ================= INFO ================= */
+
+        .info-box {
+            background: #17372e;
+            color: white;
+            border-radius: 20px;
+            padding: 32px;
+            margin-top: 28px;
+        }
+
+        .info-box h2 {
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+
+        .info-box p {
+            color: #dce9e4;
+            font-size: 15px;
+        }
+
+        .mini-tags {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 18px;
+        }
+
+        .mini-tag {
+            background: rgba(255,255,255,0.1);
+            padding: 8px 13px;
+            border-radius: 30px;
+            font-size: 12px;
+        }
+
+        /* ================= FOOTER ================= */
+
+        footer {
+            background: #102b23;
+            color: #d9e5e0;
+            text-align: center;
+            padding: 25px 15px;
+            font-size: 13px;
+        }
+
+        footer strong {
+            color: white;
+        }
+
+        /* ================= RESPONSIVE ================= */
+
+        @media (max-width: 900px) {
+
+            .result-grid,
+            .steps,
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .analytics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .wide-chart {
+                grid-column: auto;
+            }
+
+            header h1 {
+                font-size: 38px;
+            }
+        }
+
+        @media (max-width: 650px) {
+
+            .form-grid,
+            .result-grid,
+            .steps,
+            .stats-grid,
+            .analytics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .card {
+                padding: 25px 18px;
+            }
+
+            header {
+                padding: 40px 15px 60px;
+            }
+
+            header h1 {
+                font-size: 32px;
+            }
+
+            header p {
+                font-size: 16px;
+            }
+
+            .prediction-chart-container,
+            .chart-container {
+                height: 280px;
+            }
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <!-- ================= HEADER ================= -->
+
+    <header>
+
+        <div class="badge">
+            🤖 MACHINE LEARNING POWERED
+        </div>
+
+        <h1>
+            🍽️ Smart Canteen
+        </h1>
+
+        <p>
+            AI-Powered Food Demand Prediction
+        </p>
+
+        <div class="hero-small">
+            Predict demand • Plan preparation • Reduce unnecessary food waste
+        </div>
+
+    </header>
+
+
+
+    <!-- ================= MAIN ================= -->
+
+    <div class="container">
+
+
+        <!-- ================= INPUT FORM ================= -->
+
+        <section class="card">
+
+            <h2 class="section-title">
+                🍴 Enter Canteen Details
+            </h2>
+
+            <p class="section-subtitle">
+                Provide the current conditions and let the machine learning model estimate food demand.
+            </p>
+
+
+            <form action="/predict" method="POST">
+
+                <div class="form-grid">
+
+
+                    <!-- Food Item -->
+
+                    <div class="form-group">
+
+                        <label>
+                            🍱 Food Item
+                        </label>
+
+                        <select name="Item" required>
+
+                            <option value="Tea">Tea</option>
+
+                            <option value="Coffee">Coffee</option>
+
+                            <option value="Samosa">Samosa</option>
+
+                            <option value="Poha">Poha</option>
+
+                            <option value="Misal">Misal</option>
+
+                            <option value="Vada Pav">Vada Pav</option>
+
+                        </select>
+
+                    </div>
+
+
+
+                    <!-- Time Slot -->
+
+                    <div class="form-group">
+
+                        <label>
+                            🕐 Time Slot
+                        </label>
+
+                        <select name="Time_Slot" required>
+
+                            <option value="Morning">Morning</option>
+
+                            <option value="Afternoon">Afternoon</option>
+
+                            <option value="Evening">Evening</option>
+
+                        </select>
+
+                    </div>
+
+
+
+                    <!-- Day -->
+
+                    <div class="form-group">
+
+                        <label>
+                            📅 Day
+                        </label>
+
+                        <select name="Day" required>
+
+                            <option value="Monday">Monday</option>
+
+                            <option value="Tuesday">Tuesday</option>
+
+                            <option value="Wednesday">Wednesday</option>
+
+                            <option value="Thursday">Thursday</option>
+
+                            <option value="Friday">Friday</option>
+
+                            <option value="Saturday">Saturday</option>
+
+                            <option value="Sunday">Sunday</option>
+
+                        </select>
+
+                    </div>
+
+
+
+                    <!-- Weather -->
+
+                    <div class="form-group">
+
+                        <label>
+                            🌤️ Weather
+                        </label>
+
+                        <select name="Weather" required>
+
+                            <option value="Sunny">Sunny</option>
+
+                            <option value="Cloudy">Cloudy</option>
+
+                            <option value="Rainy">Rainy</option>
+
+                        </select>
+
+                    </div>
+
+
+
+                    <!-- Week Type -->
+
+                    <div class="form-group">
+
+                        <label>
+                            🗓️ Week Type
+                        </label>
+
+                        <select name="Week_Type" required>
+
+                            <option value="Weekday">Weekday</option>
+
+                            <option value="Weekend">Weekend</option>
+
+                        </select>
+
+                    </div>
+
+
+
+                    <!-- College Event -->
+
+                    <div class="form-group">
+
+                        <label>
+                            🎓 College Event
+                        </label>
+
+                        <select name="College_Event" required>
+
+                            <option value="No">No</option>
+
+                            <option value="Yes">Yes</option>
+
+                        </select>
+
+                    </div>
+
+
+
+                    <!-- Holiday -->
+
+                    <div class="form-group">
+
+                        <label>
+                            🏖️ Holiday
+                        </label>
+
+                        <select name="Holiday" required>
+
+                            <option value="No">No</option>
+
+                            <option value="Yes">Yes</option>
+
+                        </select>
+
+                    </div>
+
+
+
+                    <!-- Price -->
+
+                    <div class="form-group">
+
+                        <label>
+                            💰 Price
+                        </label>
+
+                        <input
+                            type="number"
+                            name="Price"
+                            step="0.01"
+                            min="0"
+                            placeholder="Enter price"
+                            required
+                        >
+
+                    </div>
+
+
+
+                    <!-- Month -->
+
+                    <div class="form-group">
+
+                        <label>
+                            📆 Month
+                        </label>
+
+                        <input
+                            type="number"
+                            name="Month"
+                            min="1"
+                            max="12"
+                            placeholder="1 - 12"
+                            required
+                        >
+
+                    </div>
+
+
+
+                    <!-- Day Number -->
+
+                    <div class="form-group">
+
+                        <label>
+                            🔢 Day of Week Number
+                        </label>
+
+                        <input
+                            type="number"
+                            name="Day_of_Week_Num"
+                            min="0"
+                            max="6"
+                            placeholder="0 - 6"
+                            required
+                        >
+
+                    </div>
+
+
+                </div>
+
+
+
+                <!-- Button -->
+
+                <div class="button-area">
+
+                    <button
+                        type="submit"
+                        class="predict-btn"
+                    >
+                        🔮 Predict Food Demand
+                    </button>
+
+                </div>
+
+            </form>
+
+        </section>
+
+
+
+        <!-- ================= PREDICTION RESULT ================= -->
+
+        {% if prediction is not none %}
+
+        <section class="card result-card">
+
+
+            <div class="result-heading">
+
+                <h2>
+                    📊 Prediction Result
+                </h2>
+
+                <p>
+                    Machine learning based demand estimation
+                </p>
+
+            </div>
+
+
+
+            <div class="result-grid">
+
+
+                <!-- Predicted Demand -->
+
+                <div class="result-box">
+
+                    <div class="result-icon">
+                        📈
+                    </div>
+
+                    <div class="result-value">
+                        {{ prediction }}
+                    </div>
+
+                    <div class="result-label">
+                        Predicted Demand
+                    </div>
+
+                </div>
+
+
+
+                <!-- Recommended Preparation -->
+
+                <div class="result-box">
+
+                    <div class="result-icon">
+                        🍱
+                    </div>
+
+                    <div class="result-value">
+                        {{ preparation }}
+                    </div>
+
+                    <div class="result-label">
+                        Recommended Preparation
+                    </div>
+
+                </div>
+
+
+
+                <!-- Estimated Leftover -->
+
+                <div class="result-box">
+
+                    <div class="result-icon">
+                        🥡
+                    </div>
+
+                    <div class="result-value">
+                        {{ leftover }}
+                    </div>
+
+                    <div class="result-label">
+                        Estimated Leftover
+                    </div>
+
+                </div>
+
+
+
+                <!-- Estimated Waste -->
+
+                <div class="result-box">
+
+                    <div class="result-icon">
+                        ♻️
+                    </div>
+
+                    <div class="result-value">
+                        {{ waste }}%
+                    </div>
+
+                    <div class="result-label">
+                        Estimated Waste
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+
+            <!-- Recommendation -->
+
+            <div class="recommendation">
+
+                <h3>
+                    💡 Smart Recommendation
+                </h3>
+
+                <p>
+
+                    Based on the predicted demand, the system recommends preparing approximately
+
+                    <strong>
+                        {{ preparation }} units
+                    </strong>
+
+                    while maintaining a small safety margin.
+
+                </p>
+
+            </div>
+
+
+        </section>
+
+
+
+        <!-- ================= CURRENT PREDICTION GRAPH ================= -->
+
+        <section class="card">
+
+            <h2 class="section-title">
+                📈 Current Prediction Visualization
+            </h2>
+
+            <p class="section-subtitle">
+                Visual comparison of the current prediction and recommended preparation.
+            </p>
+
+
+            <div class="prediction-chart-box">
+
+                <div class="prediction-chart-container">
+
+                    <canvas id="predictionChart"></canvas>
+
+                </div>
+
+            </div>
+
+
+        </section>
+
+        {% endif %}
+
+
+
+        <!-- ================= ANALYTICS DASHBOARD ================= -->
+
+        <section class="card">
+
+            <h2 class="section-title">
+                📊 Canteen Analytics Dashboard
+            </h2>
+
+            <p class="section-subtitle">
+                Visual insights from the Smart Canteen field dataset.
+            </p>
+
+
+
+            <div class="analytics-grid">
+
+
+                <!-- Demand by Item -->
+
+                <div class="chart-card">
+
+                    <h3>
+                        🍱 Average Demand by Food Item
+                    </h3>
+
+                    <div class="chart-container">
+
+                        <canvas id="itemDemandChart"></canvas>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- Demand by Time -->
+
+                <div class="chart-card">
+
+                    <h3>
+                        🕐 Average Demand by Time Slot
+                    </h3>
+
+                    <div class="chart-container">
+
+                        <canvas id="timeDemandChart"></canvas>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- Leftover by Item -->
+
+                <div class="chart-card wide-chart">
+
+                    <h3>
+                        ♻️ Average Leftover by Food Item
+                    </h3>
+
+                    <div class="chart-container">
+
+                        <canvas id="wasteChart"></canvas>
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ================= HOW IT WORKS ================= -->
+
+        <section class="card">
+
+            <h2 class="section-title">
+                ⚙️ How Smart Canteen Works
+            </h2>
+
+            <p class="section-subtitle">
+                From canteen information to an actionable preparation recommendation.
+            </p>
+
+
+
+            <div class="steps">
+
+
+                <div class="step">
+
+                    <div class="step-icon">
+                        📋
+                    </div>
+
+                    <h3>
+                        Enter Data
+                    </h3>
+
+                    <p>
+                        Provide food, time, day, weather and other conditions.
+                    </p>
+
+                </div>
+
+
+
+                <div class="step">
+
+                    <div class="step-icon">
+                        🤖
+                    </div>
+
+                    <h3>
+                        ML Model
+                    </h3>
+
+                    <p>
+                        The trained machine learning model processes the input.
+                    </p>
+
+                </div>
+
+
+
+                <div class="step">
+
+                    <div class="step-icon">
+                        📈
+                    </div>
+
+                    <h3>
+                        Predict Demand
+                    </h3>
+
+                    <p>
+                        The system estimates the expected food demand.
+                    </p>
+
+                </div>
+
+
+
+                <div class="step">
+
+                    <div class="step-icon">
+                        ♻️
+                    </div>
+
+                    <h3>
+                        Reduce Waste
+                    </h3>
+
+                    <p>
+                        Preparation and estimated waste are calculated.
+                    </p>
+
+                </div>
+
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ================= PROJECT STATISTICS ================= -->
+
+        <section class="card">
+
+            <h2 class="section-title">
+                📊 Project Dataset Statistics
+            </h2>
+
+            <p class="section-subtitle">
+                Summary of the collected Smart Canteen field data.
+            </p>
+
+
+
+            <div class="stats-grid">
+
+
+                <div class="stat">
+
+                    <div class="stat-number">
+                        63,406
+                    </div>
+
+                    <div class="stat-label">
+                        Total Quantity Prepared
+                    </div>
+
+                </div>
+
+
+
+                <div class="stat">
+
+                    <div class="stat-number">
+                        55,915
+                    </div>
+
+                    <div class="stat-label">
+                        Total Quantity Sold
+                    </div>
+
+                </div>
+
+
+
+                <div class="stat">
+
+                    <div class="stat-number">
+                        7,491
+                    </div>
+
+                    <div class="stat-label">
+                        Total Quantity Left
+                    </div>
+
+                </div>
+
+
+
+                <div class="stat">
+
+                    <div class="stat-number">
+                        11.81%
+                    </div>
+
+                    <div class="stat-label">
+                        Overall Observed Waste
+                    </div>
+
+                </div>
+
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ================= ABOUT PROJECT ================= -->
+
+        <section class="info-box">
+
+            <h2>
+                🌱 Why Smart Canteen?
+            </h2>
+
+            <p>
+
+                Smart Canteen combines field data, machine learning and web technology
+                to support better food demand planning. By estimating demand before
+                preparation, the system can provide useful decision-support information
+                for canteen management.
+
+            </p>
+
+
+
+            <div class="mini-tags">
+
+                <div class="mini-tag">
+                    🐍 Python
+                </div>
+
+                <div class="mini-tag">
+                    🤖 Machine Learning
+                </div>
+
+                <div class="mini-tag">
+                    📊 Data Analysis
+                </div>
+
+                <div class="mini-tag">
+                    🌐 Flask
+                </div>
+
+                <div class="mini-tag">
+                    💻 HTML & CSS
+                </div>
+
+                <div class="mini-tag">
+                    ♻️ Food Waste Reduction
+                </div>
+
+            </div>
+
+        </section>
+
+
+    </div>
+
+
+
+    <!-- ================= FOOTER ================= -->
+
+    <footer>
+
+        <strong>
+            Smart Canteen
+        </strong>
+
+        &nbsp; | &nbsp;
+
+        Predict Food Demand & Reduce Food Waste
+
+        <br>
+
+        B.Sc. Artificial Intelligence & Machine Learning
+
+        &nbsp; | &nbsp;
+
+        Field Project 2026–27
+
+    </footer>
+
+
+
+    <!-- ================= JAVASCRIPT / CHARTS ================= -->
+
+    <script>
+
+
+        /* ==========================================
+           CURRENT PREDICTION GRAPH
+           ========================================== */
+
+        {% if prediction is not none %}
+
+        const predictionChart = new Chart(
+
+            document.getElementById("predictionChart"),
+
+            {
+
+                type: "bar",
+
+                data: {
+
+                    labels: [
+                        "Predicted Demand",
+                        "Recommended Preparation",
+                        "Estimated Leftover"
+                    ],
+
+                    datasets: [
+
+                        {
+
+                            label: "Quantity (Units)",
+
+                            data: [
+                                {{ prediction }},
+                                {{ preparation }},
+                                {{ leftover }}
+                            ],
+
+                            backgroundColor: [
+                                "#19866d",
+                                "#0d6b57",
+                                "#e3a34b"
+                            ],
+
+                            borderRadius: 10,
+
+                            borderWidth: 0
+
+                        }
+
+                    ]
+
+                },
+
+                options: {
+
+                    responsive: true,
+
+                    maintainAspectRatio: false,
+
+                    plugins: {
+
+                        legend: {
+                            display: false
+                        },
+
+                        tooltip: {
+                            callbacks: {
+
+                                label: function(context) {
+
+                                    return context.raw + " units";
+
+                                }
+
+                            }
+
+                        }
+
+                    },
+
+                    scales: {
+
+                        y: {
+
+                            beginAtZero: true,
+
+                            title: {
+
+                                display: true,
+
+                                text: "Quantity (Units)"
+
+                            }
+
+                        },
+
+                        x: {
+
+                            title: {
+
+                                display: true,
+
+                                text: "Prediction Measure"
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+        );
+
+        {% endif %}
+
+
+
+        /* ==========================================
+           GRAPH 1: DEMAND BY FOOD ITEM
+           ========================================== */
+
+        const itemLabels =
+            {{ item_labels | tojson }};
+
+        const itemDemand =
+            {{ item_demand | tojson }};
+
+
+
+        new Chart(
+
+            document.getElementById("itemDemandChart"),
+
+            {
+
+                type: "bar",
+
+                data: {
+
+                    labels: itemLabels,
+
+                    datasets: [
+
+                        {
+
+                            label: "Average Quantity Sold",
+
+                            data: itemDemand,
+
+                            backgroundColor: "#19866d",
+
+                            borderRadius: 8
+
+                        }
+
+                    ]
+
+                },
+
+                options: {
+
+                    responsive: true,
+
+                    maintainAspectRatio: false,
+
+                    plugins: {
+
+                        legend: {
+                            display: false
+                        }
+
+                    },
+
+                    scales: {
+
+                        y: {
+
+                            beginAtZero: true,
+
+                            title: {
+
+                                display: true,
+
+                                text: "Average Quantity Sold"
+
+                            }
+
+                        },
+
+                        x: {
+
+                            title: {
+
+                                display: true,
+
+                                text: "Food Item"
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+        );
+
+
+
+        /* ==========================================
+           GRAPH 2: DEMAND BY TIME SLOT
+           ========================================== */
+
+        const timeLabels =
+            {{ time_labels | tojson }};
+
+        const timeDemand =
+            {{ time_demand | tojson }};
+
+
+
+        new Chart(
+
+            document.getElementById("timeDemandChart"),
+
+            {
+
+                type: "doughnut",
+
+                data: {
+
+                    labels: timeLabels,
+
+                    datasets: [
+
+                        {
+
+                            label: "Average Demand",
+
+                            data: timeDemand,
+
+                            backgroundColor: [
+                                "#19866d",
+                                "#4cae91",
+                                "#9bd7c5"
+                            ],
+
+                            borderWidth: 2
+
+                        }
+
+                    ]
+
+                },
+
+                options: {
+
+                    responsive: true,
+
+                    maintainAspectRatio: false,
+
+                    plugins: {
+
+                        legend: {
+
+                            position: "bottom"
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+        );
+
+
+
+        /* ==========================================
+           GRAPH 3: LEFTOVER BY FOOD ITEM
+           ========================================== */
+
+        const wasteLabels =
+            {{ waste_labels | tojson }};
+
+        const itemWaste =
+            {{ item_waste | tojson }};
+
+
+
+        new Chart(
+
+            document.getElementById("wasteChart"),
+
+            {
+
+                type: "bar",
+
+                data: {
+
+                    labels: wasteLabels,
+
+                    datasets: [
+
+                        {
+
+                            label: "Average Quantity Left",
+
+                            data: itemWaste,
+
+                            backgroundColor: "#e3a34b",
+
+                            borderRadius: 8
+
+                        }
+
+                    ]
+
+                },
+
+                options: {
+
+                    responsive: true,
+
+                    maintainAspectRatio: false,
+
+                    plugins: {
+
+                        legend: {
+
+                            display: true
+
+                        }
+
+                    },
+
+                    scales: {
+
+                        y: {
+
+                            beginAtZero: true,
+
+                            title: {
+
+                                display: true,
+
+                                text: "Average Quantity Left"
+
+                            }
+
+                        },
+
+                        x: {
+
+                            title: {
+
+                                display: true,
+
+                                text: "Food Item"
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+        );
+
+
+    </script>
+
+
+</body>
+
+</html>
